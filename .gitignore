@@ -9,6 +9,6 @@ out
 *.pem
 .cursor
 tmp-notes.txt
-ENP
+/ENP/
 
 .env*
