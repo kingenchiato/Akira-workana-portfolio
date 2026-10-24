@@ -11,3 +11,4 @@ out
 tmp-notes.txt
 ENP
 
+.env*
