@@ -1,5 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#001a4d"/>
-  <rect y="12" width="32" height="8" fill="#e10600"/>
-  <rect y="20" width="32" height="3" fill="#ffd200"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="AH">
+  <defs>
+    <linearGradient id="ah-bg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0a1228"/>
+      <stop offset="100%" stop-color="#02060f"/>
+    </linearGradient>
+    <linearGradient id="ah-ink" x1="6" y1="6" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f4e4b0"/>
+      <stop offset="55%" stop-color="#d4af37"/>
+      <stop offset="100%" stop-color="#a67c1a"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#ah-bg)"/>
+  <rect x="1.25" y="1.25" width="29.5" height="29.5" rx="6" fill="none" stroke="#d4af37" stroke-opacity="0.35" stroke-width="1"/>
+  <!-- A -->
+  <path
+    fill="url(#ah-ink)"
+    d="M8.1 23.4 L12.05 8.6 H14.35 L18.3 23.4 H16.05 L15.15 19.7 H11.25 L10.35 23.4 Z M12.05 17.55 H14.35 L13.2 12.55 Z"
+  />
+  <!-- H -->
+  <path
+    fill="url(#ah-ink)"
+    d="M19.2 8.6 H21.35 V14.85 H25.65 V8.6 H27.8 V23.4 H25.65 V17.1 H21.35 V23.4 H19.2 Z"
+  />
 </svg>
