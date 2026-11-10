@@ -140,8 +140,16 @@ export default function HomeView({ data }) {
     <main>
       <section className="fv" id="fv">
         <div className="fv-copy">
+          <div className="signal" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
           <p className="kicker">{data.hero.kicker}</p>
-          <h1 className="serif">{data.hero.name}</h1>
+          <h1 className="serif">
+            {data.hero.name.split(" ").slice(0, -1).join(" ")} <em>{data.hero.name.split(" ").slice(-1)}</em>
+          </h1>
           <p className="kana">{data.hero.sub}</p>
           <p className="role">{data.hero.role}</p>
           <p className="lede">{data.hero.body}</p>
@@ -181,6 +189,9 @@ export default function HomeView({ data }) {
               <i aria-hidden="true" />
               {site.mode === "playing" ? "Playing" : site.mode === "paused" ? "Resume" : "Play"}
             </button>
+            <a className="github-link" href="https://github.com/kingenchiato" target="_blank" rel="noreferrer">
+              GitHub
+            </a>
           </div>
           <div className="themes" role="group" aria-label="Viewing color">
             {site.themes.map((item) => (
@@ -439,6 +450,9 @@ export default function HomeView({ data }) {
 
       <footer className="colophon">
         <p>{data.footer.blurb}</p>
+        <a href="https://github.com/kingenchiato" target="_blank" rel="noreferrer">
+          github.com/kingenchiato
+        </a>
         <p>{data.footer.rights}</p>
       </footer>
     </main>

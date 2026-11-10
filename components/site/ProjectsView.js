@@ -232,6 +232,9 @@ export default function ProjectsView({ catalog }) {
         <p>
           <a href="/">Araki Hideki</a>
         </p>
+        <a href="https://github.com/kingenchiato" target="_blank" rel="noreferrer">
+          github.com/kingenchiato
+        </a>
         <p>© 2026 Araki Hideki. All rights reserved.</p>
       </footer>
     </main>

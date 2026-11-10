@@ -5,11 +5,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 const THEMES = [
-  { id: "snow", label: "Snow" },
-  { id: "harbor", label: "Harbor" },
-  { id: "pine", label: "Pine" },
-  { id: "sand", label: "Sand" },
-  { id: "dusk", label: "Dusk" }
+  { id: "snow", label: "Flare" },
+  { id: "harbor", label: "Lagoon" },
+  { id: "pine", label: "Citrus" },
+  { id: "sand", label: "Coral" },
+  { id: "dusk", label: "Iris" }
 ];
 
 const ZOOMS = [1, 1.12, 1.28, 1.45];
@@ -293,8 +293,11 @@ export default function Shell({ children }) {
       <div className="field">
         <header className="nav">
           <Link href="/" className="nav-mark">
-            <span>Araki Hideki</span>
-            <small>荒木 秀樹</small>
+            <b>AH</b>
+            <span>
+              <span>Araki Hideki</span>
+              <small>荒木 秀樹</small>
+            </span>
           </Link>
           <nav className="nav-links">
             <Link href="/#profile" aria-current={pathname === "/" ? "page" : undefined}>
@@ -303,6 +306,9 @@ export default function Shell({ children }) {
             <Link href="/projects" aria-current={pathname === "/projects" ? "page" : undefined}>
               Projects
             </Link>
+            <a className="nav-github" href="https://github.com/kingenchiato" target="_blank" rel="noreferrer">
+              GitHub
+            </a>
           </nav>
         </header>
         {children}
