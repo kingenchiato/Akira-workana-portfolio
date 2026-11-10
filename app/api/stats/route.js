@@ -11,13 +11,13 @@ const cookieBase = {
   secure: process.env.NODE_ENV === "production"
 };
 
-function fallback() {
-  return NextResponse.json({
+function fallbackBody() {
+  return {
     visitors: FLOORS.visitors,
     contracts: FLOORS.contracts,
     daily: FLOORS.daily,
     recommends: 0
-  });
+  };
 }
 
 export async function POST(request) {
@@ -55,6 +55,8 @@ export async function POST(request) {
     return response;
   } catch (error) {
     console.error(error);
-    return fallback();
+    const message = error instanceof Error ? error.message : "stats update failed";
+    const note = message.replace(/vercel_blob_\S+/g, "vercel_blob").slice(0, 180);
+    return NextResponse.json({ ...fallbackBody(), note });
   }
 }
