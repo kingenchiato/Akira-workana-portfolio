@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useSite } from "./Shell";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { SiteChrome, useSite } from "./Shell";
 
 const PHOTOS = [
-  { src: "/photo/1.png", alt: "Araki Hideki beside a business automation diagram" },
-  { src: "/photo/2.png", alt: "Araki Hideki in the studio" },
-  { src: "/photo/3.png", alt: "Araki Hideki at work" },
-  { src: "/photo/4.png", alt: "Araki Hideki" }
+  { src: "/photo/1.png", alt: "Araki Hideki beside a business automation diagram", focus: "42% 40%", zoom: "1.05" },
+  { src: "/photo/2.png", alt: "Araki Hideki in the studio", focus: "50% 28%", zoom: "1.05" },
+  { src: "/photo/3.png", alt: "Araki Hideki at work", focus: "16% 18%", zoom: "1.28" },
+  { src: "/photo/4.png", alt: "Araki Hideki", focus: "28% 24%", zoom: "1.52" }
 ];
 
 const FLOORS = { visitors: 320, contracts: 72, daily: 28, recommends: 0 };
@@ -53,14 +53,25 @@ function meterWidth(years) {
 export default function HomeView({ data }) {
   const site = useSite();
   const [photo, setPhoto] = useState(0);
+  const reel = useRef(0);
   const [stats, setStats] = useState(FLOORS);
   const [note, setNote] = useState("");
   const [form, setForm] = useState({ name: "", email: "", kind: data.contact.form.kinds[0], budget: data.contact.form.budgets[0], message: "" });
 
-  useEffect(() => {
-    const timer = setInterval(() => setPhoto((index) => (index + 1) % PHOTOS.length), 5200);
-    return () => clearInterval(timer);
+  const armReel = useCallback(() => {
+    window.clearInterval(reel.current);
+    reel.current = window.setInterval(() => setPhoto((index) => (index + 1) % PHOTOS.length), 6400);
   }, []);
+
+  useEffect(() => {
+    armReel();
+    return () => window.clearInterval(reel.current);
+  }, [armReel]);
+
+  const stepPhoto = (delta) => {
+    setPhoto((index) => (index + PHOTOS.length + delta) % PHOTOS.length);
+    armReel();
+  };
 
   useEffect(() => {
     const today = todayKey();
@@ -139,13 +150,11 @@ export default function HomeView({ data }) {
   return (
     <main>
       <section className="fv" id="fv">
+        <div className="fv-top">
+          <SiteChrome />
+        </div>
         <div className="fv-copy">
-          <div className="signal" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-            <i />
-          </div>
+          <div className="signal" aria-hidden="true" />
           <p className="kicker">{data.hero.kicker}</p>
           <h1 className="serif">
             {data.hero.name.split(" ").slice(0, -1).join(" ")} <em>{data.hero.name.split(" ").slice(-1)}</em>
@@ -210,20 +219,22 @@ export default function HomeView({ data }) {
         </div>
         <figure className="portrait">
           <div className="mat">
-            <img key={shot.src} src={shot.src} alt={shot.alt} />
+            <div className="mat-frame">
+              <img key={shot.src} src={shot.src} alt={shot.alt} style={{ "--focus": shot.focus, "--zoom": shot.zoom }} />
+            </div>
+            <button type="button" className="portrait-arrow is-prev" onClick={() => stepPhoto(-1)} aria-label="Previous photo">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14.5 6.5 9 12l5.5 5.5" />
+              </svg>
+            </button>
+            <button type="button" className="portrait-arrow is-next" onClick={() => stepPhoto(1)} aria-label="Next photo">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9.5 6.5 15 12l-5.5 5.5" />
+              </svg>
+            </button>
           </div>
           <figcaption>
-            <span>
-              {String(photo + 1).padStart(2, "0")} / {String(PHOTOS.length).padStart(2, "0")}
-            </span>
-            <span className="portrait-nav">
-              <button type="button" onClick={() => setPhoto((index) => (index + PHOTOS.length - 1) % PHOTOS.length)} aria-label="Previous photo">
-                Prev
-              </button>
-              <button type="button" onClick={() => setPhoto((index) => (index + 1) % PHOTOS.length)} aria-label="Next photo">
-                Next
-              </button>
-            </span>
+            {String(photo + 1).padStart(2, "0")} / {String(PHOTOS.length).padStart(2, "0")}
           </figcaption>
         </figure>
       </section>

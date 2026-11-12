@@ -5,11 +5,16 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 const THEMES = [
-  { id: "snow", label: "Flare" },
   { id: "harbor", label: "Lagoon" },
   { id: "pine", label: "Citrus" },
   { id: "sand", label: "Coral" },
   { id: "dusk", label: "Iris" }
+];
+
+const MENU = [
+  { href: "/#profile", label: "Profile", index: "01" },
+  { href: "/projects", label: "Projects", index: "02" },
+  { href: "https://github.com/kingenchiato", label: "GitHub", index: "03", external: true }
 ];
 
 const ZOOMS = [1, 1.12, 1.28, 1.45];
@@ -35,6 +40,108 @@ export function useSite() {
   return value;
 }
 
+function BrandMark() {
+  return (
+    <Link href="/" className="brand-mark">
+      <span className="brand-face">
+        <img src="/photo/2.png" alt="" />
+      </span>
+      <span>
+        <span>Araki Hideki</span>
+        <small>荒木 秀樹</small>
+      </span>
+    </Link>
+  );
+}
+
+function CornerMenu() {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onPointer = (event) => {
+      if (!rootRef.current?.contains(event.target)) setOpen(false);
+    };
+    const onKey = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  return (
+    <div className="corner-menu" ref={rootRef}>
+      <button
+        type="button"
+        className={open ? "menu-trigger is-open" : "menu-trigger"}
+        aria-expanded={open}
+        aria-controls="site-menu"
+        aria-label={open ? "Close menu" : "Open menu"}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span className="menu-seal" aria-hidden="true">
+          <svg viewBox="0 0 32 32">
+            <rect x="7" y="5.5" width="16" height="21" rx="2.2" />
+            <path d="M16.5 5.5v6.2H23" />
+            <path d="M11 16.5h8.5M11 20.5h5.5" />
+          </svg>
+        </span>
+        <span className="menu-word">Menu</span>
+        <i className="menu-chevron" aria-hidden="true" />
+      </button>
+      <div id="site-menu" className={open ? "menu-panel is-open" : "menu-panel"} role="menu" aria-hidden={!open}>
+        <p>Index</p>
+        {MENU.map((item) =>
+          item.external ? (
+            <a key={item.href} role="menuitem" href={item.href} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>
+              <span>{item.index}</span>
+              {item.label}
+            </a>
+          ) : (
+            <Link
+              key={item.href}
+              role="menuitem"
+              href={item.href}
+              aria-current={
+                item.href === "/projects"
+                  ? pathname === "/projects"
+                    ? "page"
+                    : undefined
+                  : pathname === "/"
+                    ? "page"
+                    : undefined
+              }
+              onClick={() => setOpen(false)}
+            >
+              <span>{item.index}</span>
+              {item.label}
+            </Link>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function SiteChrome() {
+  return (
+    <>
+      <BrandMark />
+      <CornerMenu />
+    </>
+  );
+}
+
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -45,7 +152,7 @@ export default function Shell({ children }) {
   const routerRef = useRef(router);
   routerRef.current = router;
 
-  const [theme, setThemeState] = useState("snow");
+  const [theme, setThemeState] = useState("harbor");
   const [zoomIndex, setZoomIndex] = useState(0);
   const [mode, setMode] = useState("idle");
   const [progress, setProgress] = useState(0);
@@ -56,7 +163,8 @@ export default function Shell({ children }) {
 
   useEffect(() => {
     const stored = window.localStorage.getItem("ah-theme");
-    if (THEMES.some((item) => item.id === stored)) setThemeState(stored);
+    const next = stored === "snow" ? "harbor" : stored;
+    if (THEMES.some((item) => item.id === next)) setThemeState(next);
     const zoom = Number(window.localStorage.getItem("ah-zoom"));
     const index = ZOOMS.findIndex((value) => Math.abs(value - zoom) < 0.01);
     if (index > 0) setZoomIndex(index);
@@ -201,7 +309,7 @@ export default function Shell({ children }) {
     if (!found) return alive(token) ? "skip" : "dead";
     const element = document.getElementById(id);
     if (!element) return "skip";
-    const top = Math.max(0, window.scrollY + element.getBoundingClientRect().top - 76);
+    const top = Math.max(0, window.scrollY + element.getBoundingClientRect().top - 24);
     let moved = await animateTo(top, token, 1100);
     if (moved === "paused") {
       if (!(await gate(token))) return "dead";
@@ -291,26 +399,11 @@ export default function Shell({ children }) {
       }}
     >
       <div className="field">
-        <header className="nav">
-          <Link href="/" className="nav-mark">
-            <b>AH</b>
-            <span>
-              <span>Araki Hideki</span>
-              <small>荒木 秀樹</small>
-            </span>
-          </Link>
-          <nav className="nav-links">
-            <Link href="/#profile" aria-current={pathname === "/" ? "page" : undefined}>
-              Profile
-            </Link>
-            <Link href="/projects" aria-current={pathname === "/projects" ? "page" : undefined}>
-              Projects
-            </Link>
-            <a className="nav-github" href="https://github.com/kingenchiato" target="_blank" rel="noreferrer">
-              GitHub
-            </a>
-          </nav>
-        </header>
+        {pathname === "/" ? null : (
+          <div className="page-chrome">
+            <SiteChrome />
+          </div>
+        )}
         {children}
         <aside className="lens" aria-label="Text size">
           <button type="button" onClick={zoomIn} disabled={! (zoomIndex < ZOOMS.length - 1)} aria-label="Zoom in">
