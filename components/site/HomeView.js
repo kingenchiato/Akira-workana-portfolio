@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import FlagIcon from "../FlagIcon";
 import { SiteChrome, useSite } from "./Shell";
 
 const PHOTOS = [
@@ -44,10 +45,167 @@ function Count({ value }) {
   return <>{shown.toLocaleString("en-US")}</>;
 }
 
-function meterWidth(years) {
-  if (years === "10+") return "92%";
-  if (years === "3-5") return "48%";
-  return "70%";
+function Stars() {
+  return (
+    <span className="stars" aria-label="Rated 5 out of 5">
+      {Array.from({ length: 5 }, (_, index) => (
+        <svg key={index} viewBox="0 0 20 20" aria-hidden="true">
+          <path d="M10 1.7 12.5 7l5.8.5-4.4 3.8 1.4 5.6L10 14.1 4.7 16.9l1.4-5.6L1.7 7.5 7.5 7z" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
+const FAMILIES = [
+  { name: "Interface", ids: ["html", "css3", "rwd", "react"] },
+  { name: "Languages", ids: ["javascript", "python", "php", "dart", "kotlin", "swift"] },
+  { name: "Product", ids: ["flutter", "android", "wordpress"] },
+  { name: "Data", ids: ["mysql", "database", "rest", "firebase"] },
+  { name: "Systems", ids: ["sysprog", "crm", "excel"] },
+  { name: "Spatial", ids: ["unity", "blender", "anim3d"] },
+  { name: "Dialogue", ids: ["nlp", "chatbot"] }
+];
+
+const SHORT = {
+  css3: "CSS",
+  javascript: "JavaScript",
+  python: "Python",
+  rwd: "Responsive",
+  react: "React",
+  flutter: "Flutter",
+  firebase: "Firebase",
+  dart: "Dart",
+  unity: "Unity",
+  wordpress: "WordPress",
+  sysprog: "Systems",
+  blender: "Blender",
+  rest: "REST",
+  excel: "Excel",
+  android: "Android",
+  database: "Database",
+  php: "PHP",
+  mysql: "MySQL",
+  html: "HTML",
+  chatbot: "Chatbot",
+  kotlin: "Kotlin",
+  swift: "Swift",
+  crm: "CRM",
+  nlp: "Language",
+  anim3d: "Animation"
+};
+
+const REACH = { "10+": 1, "5-10": 0.68, "3-5": 0.38 };
+
+function reach(years) {
+  return REACH[years] ?? REACH["5-10"];
+}
+
+function polar(cx, cy, radius, angle) {
+  return [cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius];
+}
+
+function petalPath(cx, cy, inner, outer, start, end) {
+  const large = end - start > Math.PI ? 1 : 0;
+  const [x0, y0] = polar(cx, cy, outer, start);
+  const [x1, y1] = polar(cx, cy, outer, end);
+  const [x2, y2] = polar(cx, cy, inner, end);
+  const [x3, y3] = polar(cx, cy, inner, start);
+  return `M ${x0} ${y0} A ${outer} ${outer} 0 ${large} 1 ${x1} ${y1} L ${x2} ${y2} A ${inner} ${inner} 0 ${large} 0 ${x3} ${y3} Z`;
+}
+
+function SkillAtlas({ items }) {
+  const byId = new Map(items.map((skill) => [skill.id, skill]));
+  const families = FAMILIES.map((family) => ({
+    ...family,
+    skills: family.ids.map((id) => byId.get(id)).filter(Boolean)
+  })).filter((family) => family.skills.length);
+  const gap = 0.11;
+  const usable = Math.PI * 2 - gap * families.length;
+  const count = families.reduce((sum, family) => sum + family.skills.length, 0);
+  const slot = usable / count;
+  const cx = 100;
+  const cy = 100;
+  const inner = 26;
+  let cursor = -Math.PI / 2 + gap / 2;
+  const petals = [];
+
+  families.forEach((family) => {
+    family.skills.forEach((skill) => {
+      const pad = slot * 0.16;
+      const start = cursor + pad;
+      const end = cursor + slot - pad;
+      const mid = (start + end) / 2;
+      const outer = inner + 52 * reach(skill.years);
+      const labelAt = 86;
+      const [lx, ly] = polar(cx, cy, labelAt, mid);
+      let rotation = (mid * 180) / Math.PI;
+      let anchor = "start";
+      if (Math.cos(mid) < 0) {
+        rotation += 180;
+        anchor = "end";
+      }
+      petals.push({ skill, family: family.name, start, end, mid, outer, lx, ly, rotation, anchor });
+      cursor += slot;
+    });
+    cursor += gap;
+  });
+
+  return (
+    <div className="skill-atlas">
+      <figure className="rose">
+        <svg viewBox="-8 -8 216 216" role="img" aria-label="Skills arranged by years of use">
+          {Object.values(REACH).map((level) => (
+            <circle key={level} cx={cx} cy={cy} r={inner + 52 * level} fill="none" stroke="currentColor" strokeOpacity="0.16" />
+          ))}
+          {petals.map((petal) => (
+            <path
+              key={petal.skill.id}
+              d={petalPath(cx, cy, inner, petal.outer, petal.start, petal.end)}
+              fill="currentColor"
+            >
+              <title>{`${petal.skill.name}: ${petal.skill.label}`}</title>
+            </path>
+          ))}
+          <circle cx={cx} cy={cy} r="22" fill="var(--card-solid)" />
+          <text x={cx} y={cy - 1.5} textAnchor="middle" className="rose-core">Years</text>
+          <text x={cx} y={cy + 6.5} textAnchor="middle" className="rose-core-sub">of use</text>
+          {petals.map((petal) => (
+            <text
+              key={`${petal.skill.id}-label`}
+              x={petal.lx}
+              y={petal.ly}
+              textAnchor={petal.anchor}
+              transform={`rotate(${petal.rotation} ${petal.lx} ${petal.ly})`}
+              className="rose-label"
+            >
+              {SHORT[petal.skill.id] || petal.skill.name}
+            </text>
+          ))}
+        </svg>
+        <figcaption className="rose-key">
+          <span><i className="is-long" /> 10+ years</span>
+          <span><i className="is-mid" /> 5–10 years</span>
+          <span><i className="is-short" /> 3–5 years</span>
+        </figcaption>
+      </figure>
+      <ol className="skill-index">
+        {families.map((family) => (
+          <li key={family.name}>
+            <strong>{family.name}</strong>
+            <ul>
+              {family.skills.map((skill) => (
+                <li key={skill.id}>
+                  <span>{skill.name}</span>
+                  <em>{skill.years === "10+" ? "10+" : skill.years === "3-5" ? "3–5" : "5–10"}</em>
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
 }
 
 export default function HomeView({ data }) {
@@ -248,15 +406,50 @@ export default function HomeView({ data }) {
         <div className="reviews">
           {data.reviews.map((review) => (
             <article key={review.id} className="review">
-              <img src={review.face} alt="" />
-              <div>
-                <header>
+              <header>
+                <span className="review-face">
+                  <img
+                    src={review.photo}
+                    alt=""
+                    onError={(event) => {
+                      if (event.currentTarget.dataset.fallback === "1") return;
+                      event.currentTarget.dataset.fallback = "1";
+                      event.currentTarget.src = review.face;
+                    }}
+                  />
+                  <span className="review-flag">
+                    <FlagIcon code={review.flag} />
+                  </span>
+                </span>
+                <div>
                   <strong>{review.name}</strong>
-                  <span>{review.ago}</span>
-                </header>
-                <p>{review.quote}</p>
-                <small>{review.project}</small>
-              </div>
+                  <em>{review.country}</em>
+                  <Stars />
+                </div>
+                <time>{review.ago}</time>
+              </header>
+              <blockquote>{review.quote}</blockquote>
+              <p className="review-project">{review.project}</p>
+              <footer>
+                <p className="review-price">
+                  <span>Approximate fee</span>
+                  <strong>{review.price.replace("Approx. ", "")}</strong>
+                </p>
+                <dl className="review-stats">
+                  <div>
+                    <dt>Posted</dt>
+                    <dd>{review.posted}</dd>
+                  </div>
+                  <div>
+                    <dt>Entrusted</dt>
+                    <dd>{review.entrusted}</dd>
+                  </div>
+                  <div>
+                    <dt>Completed</dt>
+                    <dd>{review.completed}</dd>
+                  </div>
+                </dl>
+              </footer>
             </article>
           ))}
         </div>
@@ -321,14 +514,17 @@ export default function HomeView({ data }) {
           <h2 className="serif">{data.journey.title}</h2>
           <p>{data.journey.lead}</p>
         </div>
-        <ol className="timeline">
-          {data.journey.items.map(([period, label, title, body]) => (
+        <ol className="saw">
+          {data.journey.items.map(([period, label, title, body], index) => (
             <li key={period}>
-              <span>{period}</span>
-              <div>
+              <article>
+                <span className="saw-index">{String(index + 1).padStart(2, "0")}</span>
                 <p className="kicker">{label}</p>
                 <h3>{title}</h3>
                 <p>{body}</p>
+              </article>
+              <div className="saw-year">
+                <span>{period}</span>
               </div>
             </li>
           ))}
@@ -341,19 +537,7 @@ export default function HomeView({ data }) {
           <h2 className="serif">{data.skills.title}</h2>
           <p>{data.skills.lead}</p>
         </div>
-        <ul className="skill-list">
-          {data.skills.items.map((skill) => (
-            <li key={skill.id}>
-              <div>
-                <strong>{skill.name}</strong>
-                <span>{skill.label}</span>
-              </div>
-              <i aria-hidden="true">
-                <b style={{ width: meterWidth(skill.years) }} />
-              </i>
-            </li>
-          ))}
-        </ul>
+        <SkillAtlas items={data.skills.items} />
         <p className="quiet">{data.skills.note}</p>
       </section>
 
