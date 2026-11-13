@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { alternateOrigins } from "../../lib/order";
 import { GROUPS } from "../../lib/groups";
 import { useSite } from "./Shell";
 
@@ -54,7 +55,11 @@ export default function ProjectsView({ catalog }) {
   const [openId, setOpenId] = useState(null);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    const requested = new URLSearchParams(window.location.search).get("work");
+    if (requested && catalog.some((item) => item.id === requested)) setOpenId(requested);
+  }, [catalog]);
 
   useEffect(() => {
     if (site.mode === "playing") setFilter("all");
@@ -205,28 +210,47 @@ export default function ProjectsView({ catalog }) {
           </button>
         ))}
       </div>
-      {GROUPS.map((group) => {
-        const items = visible.filter((item) => item.group === group.id);
-        if (!items.length) return null;
-        return (
-          <section key={group.id} id={`group-${group.id}`} className="work-group">
-            <h2 className="serif">{group.label}</h2>
-            <div className="work-grid">
-              {items.map((item) => (
-                <button key={item.id} type="button" className={`work fit-${item.group}`} onClick={() => openWork(item.id)}>
-                  <span className="work-shot">
-                    <img src={item.images[0]} alt="" />
-                  </span>
-                  <span className="work-copy">
-                    <strong>{item.title}</strong>
-                    <em>{item.summary}</em>
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-        );
-      })}
+      {filter === "all" ? (
+        <section className="work-group" id="group-all">
+          <h2 className="serif">International, then Japan</h2>
+          <div className="work-grid">
+            {alternateOrigins(visible).map((item) => (
+              <button key={item.id} type="button" className={`work fit-${item.group}`} onClick={() => openWork(item.id)}>
+                <span className="work-shot">
+                  <img src={item.images[0]} alt="" />
+                </span>
+                <span className="work-copy">
+                  <strong>{item.title}</strong>
+                  <em>{item.origin === "international" ? "International" : "Japan"} · {item.summary}</em>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      ) : (
+        GROUPS.map((group) => {
+          const items = visible.filter((item) => item.group === group.id);
+          if (!items.length) return null;
+          return (
+            <section key={group.id} id={`group-${group.id}`} className="work-group">
+              <h2 className="serif">{group.label}</h2>
+              <div className="work-grid">
+                {items.map((item) => (
+                  <button key={item.id} type="button" className={`work fit-${item.group}`} onClick={() => openWork(item.id)}>
+                    <span className="work-shot">
+                      <img src={item.images[0]} alt="" />
+                    </span>
+                    <span className="work-copy">
+                      <strong>{item.title}</strong>
+                      <em>{item.summary}</em>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          );
+        })
+      )}
       {modal}
       <footer className="colophon">
         <p>

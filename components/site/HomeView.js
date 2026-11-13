@@ -114,6 +114,18 @@ function petalPath(cx, cy, inner, outer, start, end) {
   return `M ${x0} ${y0} A ${outer} ${outer} 0 ${large} 1 ${x1} ${y1} L ${x2} ${y2} A ${inner} ${inner} 0 ${large} 0 ${x3} ${y3} Z`;
 }
 
+function tone(years) {
+  if (years === "10+") return "var(--reach-long)";
+  if (years === "3-5") return "var(--reach-short)";
+  return "var(--reach-mid)";
+}
+
+function yearChip(years) {
+  if (years === "10+") return "10+";
+  if (years === "3-5") return "3–5";
+  return "5–10";
+}
+
 function SkillAtlas({ items }) {
   const byId = new Map(items.map((skill) => [skill.id, skill]));
   const families = FAMILIES.map((family) => ({
@@ -127,8 +139,11 @@ function SkillAtlas({ items }) {
   const cx = 100;
   const cy = 100;
   const inner = 26;
+  const view = 216;
+  const origin = -8;
   let cursor = -Math.PI / 2 + gap / 2;
   const petals = [];
+  let order = 0;
 
   families.forEach((family) => {
     family.skills.forEach((skill) => {
@@ -137,52 +152,58 @@ function SkillAtlas({ items }) {
       const end = cursor + slot - pad;
       const mid = (start + end) / 2;
       const outer = inner + 52 * reach(skill.years);
-      const labelAt = 86;
+      const labelAt = 90 + (order % 2) * 8;
       const [lx, ly] = polar(cx, cy, labelAt, mid);
-      let rotation = (mid * 180) / Math.PI;
-      let anchor = "start";
-      if (Math.cos(mid) < 0) {
-        rotation += 180;
-        anchor = "end";
-      }
-      petals.push({ skill, family: family.name, start, end, mid, outer, lx, ly, rotation, anchor });
+      petals.push({
+        skill,
+        start,
+        end,
+        outer,
+        order,
+        left: `${((lx - origin) / view) * 100}%`,
+        top: `${((ly - origin) / view) * 100}%`
+      });
+      order += 1;
       cursor += slot;
     });
     cursor += gap;
   });
 
+  let chip = 0;
+
   return (
     <div className="skill-atlas">
       <figure className="rose">
-        <svg viewBox="-8 -8 216 216" role="img" aria-label="Skills arranged by years of use">
-          {Object.values(REACH).map((level) => (
-            <circle key={level} cx={cx} cy={cy} r={inner + 52 * level} fill="none" stroke="currentColor" strokeOpacity="0.16" />
-          ))}
-          {petals.map((petal) => (
-            <path
-              key={petal.skill.id}
-              d={petalPath(cx, cy, inner, petal.outer, petal.start, petal.end)}
-              fill="currentColor"
-            >
-              <title>{`${petal.skill.name}: ${petal.skill.label}`}</title>
-            </path>
-          ))}
-          <circle cx={cx} cy={cy} r="22" fill="var(--card-solid)" />
-          <text x={cx} y={cy - 1.5} textAnchor="middle" className="rose-core">Years</text>
-          <text x={cx} y={cy + 6.5} textAnchor="middle" className="rose-core-sub">of use</text>
-          {petals.map((petal) => (
-            <text
-              key={`${petal.skill.id}-label`}
-              x={petal.lx}
-              y={petal.ly}
-              textAnchor={petal.anchor}
-              transform={`rotate(${petal.rotation} ${petal.lx} ${petal.ly})`}
-              className="rose-label"
-            >
-              {SHORT[petal.skill.id] || petal.skill.name}
-            </text>
-          ))}
-        </svg>
+        <div className="rose-stage">
+          <svg viewBox="-8 -8 216 216" role="img" aria-label="Skills arranged by years of use">
+            {Object.values(REACH).map((level) => (
+              <circle key={level} cx={cx} cy={cy} r={inner + 52 * level} fill="none" className="rose-ring" />
+            ))}
+            <g className="rose-sweep">
+              <path d={petalPath(cx, cy, inner, inner + 54, -0.22, 0.22)} />
+            </g>
+            {petals.map((petal) => (
+              <path
+                key={petal.skill.id}
+                className="rose-petal"
+                d={petalPath(cx, cy, inner, petal.outer, petal.start, petal.end)}
+                style={{ fill: tone(petal.skill.years), animationDelay: `${petal.order * 0.045}s` }}
+              >
+                <title>{`${petal.skill.name}: ${petal.skill.label}`}</title>
+              </path>
+            ))}
+            <circle cx={cx} cy={cy} r="22" fill="var(--card-solid)" />
+            <text x={cx} y={cy - 1.5} textAnchor="middle" className="rose-core">Years</text>
+            <text x={cx} y={cy + 6.5} textAnchor="middle" className="rose-core-sub">of use</text>
+          </svg>
+          <ul className="rose-names">
+            {petals.map((petal) => (
+              <li key={petal.skill.id} style={{ left: petal.left, top: petal.top }}>
+                {SHORT[petal.skill.id] || petal.skill.name}
+              </li>
+            ))}
+          </ul>
+        </div>
         <figcaption className="rose-key">
           <span><i className="is-long" /> 10+ years</span>
           <span><i className="is-mid" /> 5–10 years</span>
@@ -194,12 +215,17 @@ function SkillAtlas({ items }) {
           <li key={family.name}>
             <strong>{family.name}</strong>
             <ul>
-              {family.skills.map((skill) => (
-                <li key={skill.id}>
-                  <span>{skill.name}</span>
-                  <em>{skill.years === "10+" ? "10+" : skill.years === "3-5" ? "3–5" : "5–10"}</em>
-                </li>
-              ))}
+              {family.skills.map((skill) => {
+                const delay = chip * 0.06;
+                chip += 1;
+                return (
+                  <li key={skill.id} className="skill-pill" style={{ "--tone": tone(skill.years), "--d": `${delay}s` }}>
+                    <i />
+                    <span>{skill.name}</span>
+                    <em>{yearChip(skill.years)}</em>
+                  </li>
+                );
+              })}
             </ul>
           </li>
         ))}
@@ -548,14 +574,18 @@ export default function HomeView({ data }) {
           <p>{data.projects.lead}</p>
         </div>
         <div className="preview">
-          {data.preview.map((item) => (
-            <Link key={item.id} href="/projects" className="preview-card">
+          {data.preview.map((item, index) => (
+            <Link key={item.id} href={`/projects?work=${item.id}`} className="preview-card" style={{ "--d": `${index * 0.05}s` }}>
               <img src={item.image} alt="" />
+              <em className={item.origin === "International" ? "is-world" : "is-japan"}>{item.origin}</em>
               <strong>{item.title}</strong>
               <span>{item.summary}</span>
             </Link>
           ))}
         </div>
+        <p className="preview-more">
+          <Link href="/projects">All projects</Link>
+        </p>
       </section>
 
       <section className="chapter" id="services">
