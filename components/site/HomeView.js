@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import FlagIcon from "../FlagIcon";
 import { SiteChrome, useSite } from "./Shell";
 
@@ -237,24 +237,37 @@ function SkillAtlas({ items }) {
 export default function HomeView({ data }) {
   const site = useSite();
   const [photo, setPhoto] = useState(0);
-  const reel = useRef(0);
+  const restartReel = useRef(() => {});
   const [stats, setStats] = useState(FLOORS);
   const [note, setNote] = useState("");
   const [form, setForm] = useState({ name: "", email: "", kind: data.contact.form.kinds[0], budget: data.contact.form.budgets[0], message: "" });
 
-  const armReel = useCallback(() => {
-    window.clearInterval(reel.current);
-    reel.current = window.setInterval(() => setPhoto((index) => (index + 1) % PHOTOS.length), 6400);
-  }, []);
-
   useEffect(() => {
-    armReel();
-    return () => window.clearInterval(reel.current);
-  }, [armReel]);
+    let timer = 0;
+    const start = () => {
+      window.clearInterval(timer);
+      timer = window.setInterval(() => {
+        setPhoto((index) => (index + 1) % PHOTOS.length);
+      }, 5200);
+    };
+    restartReel.current = start;
+    start();
+    const onShow = () => {
+      if (document.visibilityState === "visible") start();
+    };
+    document.addEventListener("visibilitychange", onShow);
+    window.addEventListener("pageshow", start);
+    return () => {
+      window.clearInterval(timer);
+      restartReel.current = () => {};
+      document.removeEventListener("visibilitychange", onShow);
+      window.removeEventListener("pageshow", start);
+    };
+  }, []);
 
   const stepPhoto = (delta) => {
     setPhoto((index) => (index + PHOTOS.length + delta) % PHOTOS.length);
-    armReel();
+    restartReel.current();
   };
 
   useEffect(() => {
